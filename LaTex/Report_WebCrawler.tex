@@ -1,0 +1,134 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage[rightcaption]{sidecap}
+\usepackage{verbatim}
+\usepackage[backend=bibtex]{biblatex}
+\usepackage [ a4paper , hmargin =1.2 in , bottom =1.5 in ] { geometry }
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\bibliography{references}
+% Add header and footer code here
+\fancyhead[L]{Web Crawler}
+\fancyhead[R]{Rijul Bhat}
+\fancyfoot[C]{Page \thepage}
+
+% You may also add path to the images optionally
+\graphicspath{ {./images/} }
+
+\begin{document}
+
+% preamble
+
+\title{\textbf{Web Crawler\\ Project CS104}}
+\date{}
+\author{Rijul Bhat}
+\maketitle
+% below line auto generates the table of contents
+% thank me for your free 1 mark
+\tableofcontents
+\clearpage
+\pagestyle{fancy}
+%code of section 1, with lists
+\section{Introduction}
+Welcome to the documentation for the Python Web Crawler project.\\
+Web crawler is a computer program that is used to search and automatically index website content and other information over the internet. The Web Crawler implemented by me is a python code which searches for links and files in the \textbf{src} and \textbf{href} attributes present in the source code of the web-page and then recursively crawls the links present in the source code in accordance to the needs of user. The program is expected to be run using Terminal or Command Prompt.
+
+\section{Overview}
+The libraries used in the python code of the web crawler are: \\
+BeautifulSoup; requests; sys; os; argparse; urllib; urllib3 \\ 
+The output file generated( or output on terminal) after crawling has the following format: \\ \\
+$.$ \\
+$.$ \\
+$.$ \\ 
+At recursion level $i$ \\
+Total files found : $<files>$ \\
+Internal Links : $<no\_internal\_links>$ \\
+External Links : $<no\_external\_links>$ \\
+$<ext>$ files: \\
+$<link>$ \\
+$<link>$ \\
+$.$ \\
+$.$ \\
+$.$ \\ 
+$<no\_of\_files>$ files found \\
+$.$ \\
+$.$ \\
+$.$ \\ 
+\section{Logic}
+The web crawler implemented follows the below logical scheme for printing the webpage found for both finite and infinite level recursion: \\ 
+\begin{itemize}
+\item{If at the ith recursion level, a webpage is being referred by multiple webpages then that webpage will be printed only once at that particular recursion level. Also, if a webpage is found at $i$th recursion level and then even if it is found again at $j$th recursion level where $j > i$ it will not be crawled again. However, the webpage will be printed again so as to indicate that it was also obtained at that recursion level.}
+\item{Further details about code functioning can be found in the comments in the source code.}
+\end{itemize}
+\section{Customization}
+\begin{itemize}
+\item{Downloading File: \\
+Files of particular extensions can be downloaded. The extensions are user specified and have to be space separated if multiple extension files are required to be downloaded.  If no arguments are specified then all files(including web-pages) are downloaded. The files will be downloaded in a directory wise fashion. For instance if a website A is being crawled and we are downloading pdf files, if the pdf file say B.pdf has path A/x/y/B.pdf then B.pdf will be downloaded with path ./x/y/B.pdf on the local machine.
+}
+\item{Multiple Site Crawling: \\
+Multiple websites can be crawled at once. The specified threshold level will be applicable for all urls.
+}
+\item{Displaying File Size: \\
+File size is displayed along with the list of visited urls.
+}
+\item{Sorting Files with respect to File Size: \\
+Sorting list of displayed files with respect to file size. This will not display the file size but only sort with respect to size. Specify -s along with -x in order to get file size as well.
+}
+\item{Counting the internal and external links for each recursive level
+}
+\end{itemize}
+%code of section 2, make appr
+\section{Syntax and Documentation}
+%para
+\begin{itemize}
+\item{\Large Usage \\ \\ python3 web\_crawler.py [-h] -u URL [URL ...] [-t THRESHOLD] [-o OUTPUT [OUTPUT ...]] [-d [DOWNLOAD ...]] [-s] [-x]}
+
+\item{\Large Options: \\ \\ \normalsize
+\begin{tabular}{ | p{7 cm} | p{7 cm} | } 
+\hline 
+ \textbf{Options} & \textbf{Description} \\
+ \hline
+ \hline
+ -h, --help & show this help message and exit \\
+ \hline 
+ -u URL [URL ...] & provide url(s)  \\
+ \hline
+ -t THRESHOLD & provide output file(s) for storing the result\\
+ \hline
+ -d [DOWNLOAD ...] & provide extension of file which you want to download or do not specify any arguments to download every file directory wise \\
+ \hline
+ -s, --size & provide flag if file size is also required in the output \\
+ \hline
+ -x, --sort & provide flag for sorting with respect to file size without getting file size in the output\\
+ \hline
+ 
+\end{tabular}}
+\end{itemize}
+
+\section{Source Code}
+The source code of the web crawler can be found in this \href{https://github.com/rijulbhat/WebCrawler_Python.git}{GitHub Repo}.
+% \[\]
+%
+% \begin{tabular}{ ... }
+
+% % ... fill up table
+% \end{tabular}
+
+
+% print the bibliography
+\printbibliography
+\end{document}
