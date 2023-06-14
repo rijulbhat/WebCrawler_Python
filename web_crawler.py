@@ -34,13 +34,11 @@ else:
 
 downloaded = []
 
-#Returns File Extension
 def get_file_extension(link):
     parsed_link = urlparse(link)
     path = parsed_link.path
     return os.path.splitext(path)[1]
 
-#Downloads file present in the given url
 def download_file(url):
     if url in downloaded:
         return
@@ -68,8 +66,7 @@ def download_file(url):
         
     except Exception as e:
         print(url, "Error occurred while downloading the file:", str(e))
-
-#Returns file size in KB
+    
 def get_file_size(url):
     try:
         response = requests.head(url, allow_redirects=True)
@@ -83,8 +80,7 @@ def get_file_size(url):
     except requests.exceptions.RequestException as e:
         return float(-1)
 
-# Recursive Function which crawls the link given as arguments in the form of url and anchor and takes attribute as argument which determines which attribute to look into
-def attribute_crawler(url, i, anchor, attribute, level=0, max_level=None, visited_pages=None, visited_pages_wo_level=None):
+def attribute_crawler(url, i, anchor, attribute, level=0, max_level=10, visited_pages=None):
     href = anchor.get(attribute)
     absolute_url = urljoin(url, href)
 
@@ -95,12 +91,37 @@ def attribute_crawler(url, i, anchor, attribute, level=0, max_level=None, visite
     if same_absolute_url[-1] == '/':
         same_absolute_url = same_absolute_url[:-1]
     
-    if absolute_url not in visited_pages_wo_level and same_absolute_url not in visited_pages_wo_level and (urlparse(absolute_url).netloc == urlparse(args.url[i]).netloc):
-        crawl_website(absolute_url, i, level+1, max_level, visited_pages, visited_pages_wo_level)
+    if (absolute_url, level+1) not in visited_pages and (urlparse(absolute_url).netloc == urlparse(args.url[i]).netloc):
+        crawl_website(absolute_url, i, level+1, max_level, visited_pages)
 
-    elif absolute_url not in visited_pages_wo_level and same_absolute_url not in visited_pages_wo_level:
+    elif (absolute_url, level+1) not in visited_pages:
         visited_pages.append((absolute_url, level+1))
-        visited_pages_wo_level.append(absolute_url)
+    
+    if args.download:    
+        if get_file_extension(absolute_url) in args.download:
+                    download_file(absolute_url)
+        if ".html" in args.download and get_file_extension(absolute_url) == "":
+            download_file(absolute_url)
+    elif args.download == []:
+        download_file(absolute_url)
+
+def infinite_attribute_crawler(url, i, anchor, attribute, level=0, visited_pages=None, visited_pages_wo_level=None):
+    href = anchor.get(attribute)
+    absolute_url = urljoin(url, href)
+
+    # This line does not iterate websites again even if a slash has been added at the end
+
+    same_absolute_url = absolute_url
+
+    if same_absolute_url[-1] == '/':
+        same_absolute_url = same_absolute_url[:-1]
+
+    if absolute_url not in visited_pages_wo_level and same_absolute_url not in visited_pages_wo_level and (urlparse(absolute_url).netloc == urlparse(args.url[i]).netloc):
+        infinite_crawl_website(absolute_url, i, level+1, visited_pages, visited_pages_wo_level)
+
+    elif (absolute_url, level+1) not in visited_pages:
+        visited_pages.append((absolute_url, level+1))
+        visited_pages_wo_level.append(url)
 
     if args.download:    
         if get_file_extension(absolute_url) in args.download:
@@ -110,21 +131,16 @@ def attribute_crawler(url, i, anchor, attribute, level=0, max_level=None, visite
     elif args.download == []:
         download_file(absolute_url)
 
-# This function gets all the links corresponding to src and href in the url provided 
-def crawl_website(url, i, level=0, max_level=None, visited_pages=None, visited_pages_wo_level=None):
+
+def crawl_website(url, i, level=0, max_level=10, visited_pages=None):
     if visited_pages is None:
         visited_pages = []
 
-    if visited_pages_wo_level is None:
-        visited_pages_wo_level = []
-
     if level!=0:
-        visited_pages.append((url,level))
-        visited_pages_wo_level.append(url)
+        visited_pages.append((url, level))
 
-    if max_level is not None:
-        if level >= max_level:
-            return visited_pages
+    if level >= max_level:
+        return visited_pages
 
     try:
         response = requests.get(url, verify=False)
@@ -137,12 +153,46 @@ def crawl_website(url, i, level=0, max_level=None, visited_pages=None, visited_p
             # Find all anchor tags and extract their href attribute
             anchors = soup.find_all(href=True)
             for anchor in anchors:
-                attribute_crawler(url, i, anchor, 'href', level, max_level, visited_pages, visited_pages_wo_level)
+                attribute_crawler(url, i, anchor, 'href', level, max_level, visited_pages)
 
 
             anchors = soup.find_all(src=True)
             for anchor in anchors:
-                attribute_crawler(url, i, anchor, 'src', level, max_level, visited_pages, visited_pages_wo_level)                 
+                attribute_crawler(url, i, anchor, 'src', level, max_level, visited_pages)                 
+
+    except requests.exceptions.RequestException as e:
+        pass
+
+    return visited_pages
+
+def infinite_crawl_website(url, i, level=0, visited_pages=None, visited_pages_wo_level=None):
+    if visited_pages is None:
+        visited_pages = []
+
+    if visited_pages_wo_level is None:
+        visited_pages_wo_level = []
+    
+    if level!=0:
+        visited_pages.append((url, level))
+        visited_pages_wo_level.append(url)
+
+    try:
+        response = requests.get(url, verify=False)
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # Process the page content here if needed
+            # ...
+
+            # Find all anchor tags and extract their href attribute
+            anchors = soup.find_all(href=True)
+            for anchor in anchors:
+                infinite_attribute_crawler(url, i, anchor, 'href', level, visited_pages, visited_pages_wo_level)
+
+
+            anchors = soup.find_all(src=True)
+            for anchor in anchors:
+                infinite_attribute_crawler(url, i, anchor, 'src', level, visited_pages, visited_pages_wo_level)                 
 
     except requests.exceptions.RequestException as e:
         pass
@@ -150,20 +200,21 @@ def crawl_website(url, i, level=0, max_level=None, visited_pages=None, visited_p
     return visited_pages
 
 
-# File Handling and generating the output file in the desired format
 for i in range(len(args.url)):
     # Specify the starting URL of the website you want to crawl
     start_url = args.url[i]
 
+    # Specify the maximum level of recursion
+    # Call the crawl_website function
     if flag_th:
         max_level = int(args.threshold[0])
         result = crawl_website(start_url, i, max_level=max_level)
         
     else:
-        result = crawl_website(start_url, i)
+        result = infinite_crawl_website(start_url, i)
 
 
-    # Sort the visited pages based on the recursive level, file extension (or size if -x is provided)
+    # Sort the visited pages based on the recursive level
 
     if args.sort:
         sorted_result = sorted(result, key=lambda x: (x[1], get_file_extension(x[0]), get_file_size(x[0])))
@@ -250,12 +301,11 @@ for i in range(len(args.url)):
             total_internal_links_count +=1 
         else:
             total_external_links_count += 1
-    #Print the total unique internal links
     print(f"\nTotal unique internal links found: {total_internal_links_count}")
-    #Print the total unique external links
     print(f"\nTotal unique external links found: {total_external_links_count}")
     total_pages = len(result)
+    print(f"\nTotal unique files found: {total_internal_links_count+total_external_links_count}")
     print(f"\nTotal files Found: {total_pages}")
     if sys.stdout != orig_stdout:
         sys.stdout = orig_stdout
-        print(f"Total files Found: {total_pages}")
+        print(f"Total file Found: {total_pages}")
